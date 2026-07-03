@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Integration - 輕鬆規劃行程，一鍵開始！</title>
+    <!-- 引入 Google Fonts 讓字體更可愛圓潤 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 html2canvas 用於將網頁轉換為 JPG 下載 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #FFD966;
+            --primary-light: #FFF9E6;
+            --bg-color: #FCFBF7;
+            --text-color: #5D534A;
+            --card-bg: #FFFFFF;
+            --accent-color: #E29578;
+            --danger-color: #E63946;
+            --success-color: #A3B18A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background-color: var(--primary-light);
+            padding: 25px 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 0 var(--primary-color);
+            border: 3px solid var(--text-color);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            color: var(--text-color);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #7A6F64;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 3px solid var(--text-color);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 5px 5px 0 var(--text-color);
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px dashed var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            background-color: #FFF;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            background-color: var(--primary-light);
+        }
+
+        textarea {
+            resize: vertical;
+            height: 120px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            border: 2px solid var(--text-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 var(--text-color);
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 var(--text-color);
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--text-color);
+        }
+
+        .btn-text-only {
+            background: none;
+            border: none;
+            box-shadow: none;
+            color: var(--accent-color);
+            padding: 0;
+            width: auto;
+            margin-top: 0;
+            font-size: 0.9rem;
+            text-decoration: underline;
+        }
+        .btn-text-only:hover { transform: none; box-shadow: none; filter: brightness(0.8); }
+
+        .spot-list-item {
+            background: var(--primary-light);
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spot-info-edit {
+            flex-grow: 1;
+        }
+
+        .inline-select {
+            width: auto;
+            padding: 3px 5px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .delete-btn {
+            background: var(--danger-color);
+            color: white;
+            border: 2px solid var(--text-color);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 0 var(--text-color);
+            width: auto;
+            margin-top: 0;
+        }
+
+        /* 行程時間軸樣式 */
+        .timeline-box {
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 20px;
+            margin-top: 15px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 25px;
+            padding-left: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .timeline-item::before {
+            content: '●';
+            position: absolute;
+            left: -20px;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            background: var(--card-bg);
+            z-index: 2;
+        }
+
+        .timeline-content {
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+
+        .time-tag {
+            background: var(--text-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: var(--danger-color);
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .order-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .order-btn {
+            background: white;
+            border: 2px solid var(--text-color);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            box-shadow: 0 2px 0 var(--text-color);
+            width: auto;
+            margin-top: 0;
+        }
+        .order-btn:hover { background: var(--primary-light); }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .maps-btn {
+            background-color: #4285F4;
+            color: white;
+        }
+        .maps-btn:hover { background-color: #357ae8; }
+
+        .jpg-btn {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .jpg-btn:hover { filter: brightness(0.9); }
+
+        .tip-text {
+            font-size: 0.82rem;
+            color: #888;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-compass" style="color: var(--accent-color);"></i> Map Integration</h1>
+        <p>輕鬆規劃行程，一鍵開始！</p>
+    </header>
+
+    <div class="container">
+        <!-- 左側：輸入面板 -->
+        <div class="space-y" style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- 1. 旅遊時間 -->
+            <div class="card">
+                <h2><i class="fa-solid fa-calendar-days"></i> 1. 設定旅遊時間</h2>
+                <div class="form-group">
+                    <label for="trip-date">旅遊日期</label>
+                    <input type="date" id="trip-date" value="2026-07-01" onchange="forceRegenerate()">
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="start-time">出發時間</label>
+                        <input type="time" id="start-time" value="09:00" onchange="forceRegenerate()">
+                    </div>
+                    <div class="form-group">
+                        <label for="drive-duration">預估景點間車程</label>
+                        <select id="drive-duration" onchange="forceRegenerate()">
+                            <option value="15">15 分鐘 (近距離)</option>
+                            <option value="25" selected>25 分鐘 (一般市區)</option>
+                            <option value="45">45 分鐘 (跨區/郊區)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 直接貼上並繞開權限限制 -->
+            <div class="card">
+                <h2>
+                    <span><i class="fa-solid fa-map-location-dot"></i> 2. 分析共用地圖景點</span>
+                    <button class="btn-text-only" onclick="loadExampleData()">帶入模擬範例</button>
+                </h2>
+                
+                <div class="form-group">
+                    <label for="map-url">直接貼上 Google Maps 共用地圖網址或分享文字</label>
+                    <input type="text" id="map-url" placeholder="在此直接貼上網址或地圖導出的複製文字...">
+                    <p class="tip-text">🚀 <b>免權限密技：</b>直接將分享文字或網址貼上，並點擊下方按鈕，系統會自動幫您過濾出景點清單！</p>
+                </div>
+
+                <button type="button" onclick="autoExtractAndSync()"><i class="fa-solid fa-wand-magic-sparkles"></i> 智慧分析並自動排程</button>
+
+                <!-- 整理後的清單輸入與編輯框 (一行一個) -->
+                <div class="form-group" style="margin-top: 20px;">
+                    <label for="bulk-spots" style="color: var(--text-color); display: flex; justify-content: space-between;">
+                        <span>📋 清單輸入與編輯框 (一行一個)</span>
+                        <span style="font-size: 0.8rem; color: var(--accent-color);">✎ 支援手動隨時加減</span>
+                    </label>
+                    <textarea id="bulk-spots" oninput="processTextToSpots(this.value)" placeholder="等待自動解析，或在此直接手動輸入景點名稱..."></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>統一預設營業開始</label>
+                        <input type="time" id="default-open" value="09:00" onchange="forceRegenerate()">
+                    </div>
+                    <div class="form-group">
+                        <label>統一預設營業結束</label>
+                        <input type="time" id="default-close" value="21:30" onchange="forceRegenerate()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：行程與預覽 -->
+        <div class="space-y" style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- 待排清單 -->
+            <div class="card">
+                <h2>
+                    <span><i class="fa-solid fa-list-ul"></i> 智慧辨識與精細微調</span>
+                    <button class="btn-text-only" style="color:var(--danger-color);" onclick="clearAllSpots()">一鍵清空</button>
+                </h2>
+                <div id="spot-list">
+                    <p style="color: #999; text-align: center; padding: 20px;">請在左側輸入或貼上地圖資料</p>
+                </div>
+            </div>
+
+            <!-- 排程結果 -->
+            <div class="card" id="itinerary-card">
+                <h2><i class="fa-solid fa-route"></i> Map Integration 行程路線表</h2>
+                <div id="trip-info-header" style="margin-bottom: 10px; font-weight: bold; color: #7A6F64; display:none;"></div>
+                
+                <div id="itinerary-result" class="timeline-box">
+                    <p style="color: #999; text-align: center; padding: 20px;">行程表將會即時自動為您排出最佳順路路線！</p>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="open-maps-btn" class="maps-btn" style="display: none;" onclick="openGoogleMaps()"><i class="fa-solid fa-map-location-dot"></i> 一鍵開啟 Google Maps 導航</button>
+                    <button id="download-jpg-btn" class="jpg-btn" style="display: none;" onclick="downloadItineraryJPG()"><i class="fa-solid fa-image"></i> 另存行程表圖 (JPG) 離線查看</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let spots = [];
+
+        // 帶入範例資料（完全符合安全的 HTTPS 規範）
+        function loadExampleData() {
+            const sampleInput = "景點清單分享：\n1. 秋紅谷景觀公園 https://maps.app.goo.gl/sample1\n2. 太初麵食 (餐廳) https://maps.app.goo.gl/sample2\n3. 國家歌劇院\n4. 成真咖啡館 (咖啡)\n5. 逢甲夜市\n6. 綠宿行旅 (飯店) https://maps.app.goo.gl/sample3";
+            document.getElementById('map-url').value = sampleInput;
+            autoExtractAndSync();
+        }
+
+        // 清空所有資料
+        function clearAllSpots() {
+            spots = [];
+            document.getElementById('map-url').value = "";
+            document.getElementById('bulk-spots').value = "";
+            renderSpotList();
+            document.getElementById('itinerary-result').innerHTML = `<p style="color: #999; text-align: center; padding: 20px;">行程表將會即時自動為您排出最佳順路路線！</p>`;
+            document.getElementById('open-maps-btn').style.display = 'none';
+            document.getElementById('download-jpg-btn').style.display = 'none';
+            document.getElementById('trip-info-header').style.display = 'none';
+        }
+
+        // 強制重新生成
+        function forceRegenerate() {
+            const currentText = document.getElementById('bulk-spots').value;
+            processTextToSpots(currentText);
+        }
+
+        // 核心解構修復：支援純網址防呆
+        function autoExtractAndSync() {
+            const rawInput = document.getElementById('map-url').value;
+            if (!rawInput || !rawInput.trim()) {
+                alert("請先在欄位中貼上 Google Maps 分享文字或網址！");
+                return;
+            }
+
+            let lines = rawInput.split('\n');
+            let cleanNames = [];
+            let urlCounter = 1;
+
+            lines.forEach(line => {
+                let trimmedLine = line.trim();
+                if (!trimmedLine) return;
+
+                // 檢查是否整行只有網址
+                if (/^https?:\/\/[^\s]+$/.test(trimmedLine)) {
+                    cleanNames.push(`[地圖景點 ${urlCounter}]`);
+                    urlCounter++;
+                } else {
+                    // 去除網址部分
+                    let noUrl = trimmedLine.replace(/https?:\/\/[^\s]+/g, '');
+                    // 去除序號數字
+                    let noIndex = noUrl.replace(/^[\d\s.、·\-]+/g, '');
+                    let finalName = noIndex.trim();
+
+                    if (finalName.length > 0 && !finalName.includes("景點清單分享") && !finalName.includes("我想去這些地方")) {
+                        cleanNames.push(finalName);
+                    } else if (trimmedLine.includes("http")) {
+                        // 如果有網址但被削掉後沒名字了，補上防呆佔位符
+                        cleanNames.push(`[地圖景點 ${urlCounter}]`);
+                        urlCounter++;
+                    }
+                }
+            });
+
+            // 如果最後過濾完空無一物，做最後防呆
+            if (cleanNames.length === 0) {
+                cleanNames.push("[地圖景點 1]");
+            }
+
+            const mergedText = cleanNames.join('\n');
+            document.getElementById('bulk-spots').value = mergedText;
+
+            // 執行渲染與排程
+            processTextToSpots(mergedText);
+        }
+
+        // 解析編輯框內的文字，並進行智慧類別判定
+        function processTextToSpots(text) {
+            if (!text || !text.trim()) return;
+            
+            const openTime = document.getElementById('default-open').value;
+            const closeTime = document.getElementById('default-close').value;
+            
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            spots = [];
+
+            lines.forEach(name => {
+                let type = 'spot';
+                let duration = 90;
+
+                // 智慧關鍵字識別
+                if (/(餐廳|麵|飯|鍋|肉|料理|食堂|餐酒館|午餐|晚餐|吃|甜點|小吃|美食)/.test(name)) {
+                    type = 'food';
+                    duration = 60;
+                } else if (/(咖啡|Cafe|cafe|下午茶|館|吧|星巴克)/.test(name)) {
+                    type = 'coffee';
+                    duration = 60;
+                } else if (/(飯店|旅店|民宿|Hotel|hotel|居|宿|Motel|住)/.test(name)) {
+                    type = 'hotel';
+                    duration = 0;
+                }
+
+                spots.push({
+                    id: Date.now() + Math.random(),
+                    name,
+                    type,
+                    openTime,
+                    closeTime,
+                    duration
+                });
+            });
+
+            autoSortSpotsSmartly();
+            renderSpotList();
+            generateItinerary();
+        }
+
+        // 智慧型權重演算法（飯店自動鎖定在行程最終站）
+        function autoSortSpotsSmartly() {
+            let hotels = spots.filter(s => s.type === 'hotel');
+            let others = spots.filter(s => s.type !== 'hotel');
+            spots = [...others, ...hotels]; 
+        }
+
+        function deleteSpot(id) {
+            spots = spots.filter(spot => spot.id !== id);
+            document.getElementById('bulk-spots').value = spots.map(s => s.name).join('\n');
+            renderSpotList();
+            generateItinerary();
+        }
+
+        function updateSpotField(id, field, value) {
+            const spot = spots.find(s => s.id === id);
+            if (spot) {
+                if (field === 'duration') value = parseInt(value);
+                spot[field] = value;
+                generateItinerary(); 
+            }
+        }
+
+        function renderSpotList() {
+            const listContainer = document.getElementById('spot-list');
+            if (spots.length === 0) {
+                listContainer.innerHTML = `<p style="color: #999; text-align: center; padding: 20px;">請在左側輸入或貼上地圖資料</p>`;
+                return;
+            }
+
+            listContainer.innerHTML = spots.map(spot => `
+                <div class="spot-list-item">
+                    <div class="spot-info-edit">
+                        <strong>${spot.name}</strong><br>
+                        <select class="inline-select" onchange="updateSpotField(${spot.id}, 'type', this.value)">
+                            <option value="spot" ${spot.type === 'spot' ? 'selected' : ''}>🎯 景點</option>
+                            <option value="food" ${spot.type === 'food' ? 'selected' : ''}>🍔 美食餐廳</option>
+                            <option value="coffee" ${spot.type === 'coffee' ? 'selected' : ''}>☕ 咖啡下午茶</option>
+                            <option value="hotel" ${spot.type === 'hotel' ? 'selected' : ''}>🏨 飯店最終站</option>
+                        </select>
+                        <select class="inline-select" onchange="updateSpotField(${spot.id}, 'duration', this.value)">
+                            <option value="30" ${spot.duration === 30 ? 'selected' : ''}>停留 30分</option>
+                            <option value="60" ${spot.duration === 60 ? 'selected' : ''}>停留 1小時</option>
+                            <option value="90" ${spot.duration === 90 ? 'selected' : ''}>停留 1.5小時</option>
+                            <option value="120" ${spot.duration === 120 ? 'selected' : ''}>停留 2小時</option>
+                            <option value="0" ${spot.duration === 0 ? 'selected' : ''}>落腳休息</option>
+                        </select>
+                    </div>
+                    <button class="delete-btn" onclick="deleteSpot(${spot.id})"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // 動態即時排程核心演算法
+        function generateItinerary() {
+            if (spots.length === 0) return;
+
+            const tripDate = document.getElementById('trip-date').value;
+            const tripHeader = document.getElementById('trip-info-header');
+            tripHeader.innerText = `旅遊日期：${tripDate}`;
+            tripHeader.style.display = 'block';
+
+            const startTimeInput = document.getElementById('start-time').value;
+            const driveDuration = parseInt(document.getElementById('drive-duration').value);
+            let [currentHour, currentMinute] = startTimeInput.split(':').map(Number);
+            
+            let timelineHtml = `<div class="timeline">`;
+            
+            spots.forEach((spot, index) => {
+                let arrivalTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+                const isOpenned = checkInOpeningHours(arrivalTimeStr, spot.openTime, spot.closeTime);
+                
+                let mealTip = "";
+                if ((currentHour >= 11 && currentHour <= 13) && (spot.type !== 'food' && spot.type !== 'coffee')) {
+                    mealTip = `<div style="color:var(--accent-color); font-size:0.85rem; font-weight:bold; margin-top:3px;"><i class="fa-solid fa-utensils"></i> 💡 提示：正值午餐時間，建議調整美食餐廳至此！</div>`;
+                } else if ((currentHour >= 17 && currentHour <= 19) && (spot.type !== 'food' && spot.type !== 'coffee' && spot.type !== 'hotel')) {
+                    mealTip = `<div style="color:var(--accent-color); font-size:0.85rem; font-weight:bold; margin-top:3px;"><i class="fa-solid fa-utensils"></i> 💡 提示：正值晚餐時間，建議調整美食餐廳至此！</div>`;
+                }
+
+                let departMinute = currentMinute + spot.duration;
+                let departHour = currentHour + Math.floor(departMinute / 60);
+                departMinute = departMinute % 60;
+                let departureTimeStr = `${String(departHour).padStart(2, '0')}:${String(departMinute).padStart(2, '0')}`;
+
+                timelineHtml += `
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <span class="time-tag">${spot.type === 'hotel' ? '晚上最終站落腳' : arrivalTimeStr + ' - ' + departureTimeStr}</span>
+                            <strong style="display:block; margin-top:5px; font-size:1.1rem;">${index + 1}. ${spot.name}</strong>
+                            ${!isOpenned ? `<div class="warning"><i class="fa-solid fa-triangle-exclamation"></i> ⚠️ 撲空警告：此時段非營業時間！(${spot.openTime} - ${spot.closeTime})</div>` : ''}
+                            ${mealTip}
+                            <small style="color: #666;">${spot.type === 'hotel' ? '抵達飯店辦理 Check-in 入住' : '預計停留 ' + spot.duration + ' 分鐘'}</small>
+                        </div>
+                        <div class="order-actions">
+                            <button class="order-btn" onclick="moveSpot(${index}, -1)"><i class="fa-solid fa-chevron-up"></i></button>
+                            <button class="order-btn" onclick="moveSpot(${index}, 1)"><i class="fa-solid fa-chevron-down"></i></button>
+                        </div>
+                    </div>
+                `;
+
+                currentMinute = departMinute + driveDuration; 
+                currentHour = departHour + Math.floor(currentMinute / 60);
+                currentMinute = currentMinute % 60;
+            });
+
+            timelineHtml += `</div>`;
+            document.getElementById('itinerary-result').innerHTML = timelineHtml;
+            
+            document.getElementById('open-maps-btn').style.display = 'block';
+            document.getElementById('download-jpg-btn').style.display = 'block';
+        }
+
+        function moveSpot(index, direction) {
+            const targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= spots.length) return;
+
+            const temp = spots[index];
+            spots[index] = spots[targetIndex];
+            spots[targetIndex] = temp;
+
+            document.getElementById('bulk-spots').value = spots.map(s => s.name).join('\n');
+            renderSpotList();
+            generateItinerary();
+        }
+
+        function checkInOpeningHours(current, open, close) {
+            const c = timeToMinutes(current);
+            const o = timeToMinutes(open);
+            const l = timeToMinutes(close);
+            return c >= o && c <= l;
+        }
+
+        function timeToMinutes(timeStr) {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        // 修復：正確導向標準的 Google Maps 多點導航路徑
+        function openGoogleMaps() {
+            if (spots.length === 0) return;
+            const baseUrl = "https://www.google.com/maps/dir/";
+            const params = spots.map(spot => encodeURIComponent(spot.name)).join('/');
+            window.open(baseUrl + params, '_blank');
+        }
+
+        function downloadItineraryJPG() {
+            const target = document.getElementById('itinerary-card');
+            html2canvas(target, {
+                backgroundColor: "#FFFFFF",
+                scale: 2, 
+                useCORS: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const tripDate = document.getElementById('trip-date').value || '行程表';
+                const link = document.createElement('a');
+                link.download = `Map_Integration_${tripDate}.jpg`;
+                link.href = imgData;
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
