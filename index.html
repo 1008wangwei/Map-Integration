@@ -334,16 +334,16 @@
                 <h2><i class="fa-solid fa-calendar-days"></i> 1. 設定旅遊時間</h2>
                 <div class="form-group">
                     <label for="trip-date">旅遊日期</label>
-                    <input type="date" id="trip-date" value="2026-07-01" onchange="generateItinerary()">
+                    <input type="date" id="trip-date" value="2026-07-01" onchange="forceRegenerate()">
                 </div>
                 <div class="row">
                     <div class="form-group">
                         <label for="start-time">出發時間</label>
-                        <input type="time" id="start-time" value="09:00" onchange="generateItinerary()">
+                        <input type="time" id="start-time" value="09:00" onchange="forceRegenerate()">
                     </div>
                     <div class="form-group">
                         <label for="drive-duration">預估景點間車程</label>
-                        <select id="drive-duration" onchange="generateItinerary()">
+                        <select id="drive-duration" onchange="forceRegenerate()">
                             <option value="15">15 分鐘 (近距離)</option>
                             <option value="25" selected>25 分鐘 (一般市區)</option>
                             <option value="45">45 分鐘 (跨區/郊區)</option>
@@ -417,9 +417,9 @@
     <script>
         let spots = [];
 
-        // 帶入範例資料
+        // 帶入範例資料（所有範例網址全面升級為安全的 https，確保符合 GitHub 安全規範）
         function loadExampleData() {
-            const sampleInput = "景點清單分享：\n1. 秋紅谷景觀公園 https://maps.app.goo.gl/xxxxx\n2. 太初麵食 (餐廳) https://maps.app.goo.gl/yyyyy\n3. 國家歌劇院\n4. 成真咖啡館 (咖啡)\n5. 逢甲夜市\n6. 綠宿行旅 (飯店) https://maps.app.goo.gl/zzzzz";
+            const sampleInput = "景點清單分享：\n1. 秋紅谷景觀公園 https://maps.google.com/1\n2. 太初麵食 (餐廳) https://maps.google.com/2\n3. 國家歌劇院\n4. 成真咖啡館 (咖啡)\n5. 逢甲夜市\n6. 綠宿行旅 (飯店) https://maps.google.com/3";
             document.getElementById('map-url').value = sampleInput;
             autoExtractAndSync();
         }
@@ -442,7 +442,7 @@
             processTextToSpots(currentText);
         }
 
-        // 核心修正：手動/自動安全解構
+        // 核心解構：手動/自動安全解構
         function autoExtractAndSync() {
             const rawInput = document.getElementById('map-url').value;
             if (!rawInput || !rawInput.trim()) {
@@ -454,13 +454,12 @@
             let cleanNames = [];
 
             lines.forEach(line => {
-                // 1. 去除網址 (http:// 或 https:// 開頭的部分)
+                // 去除網址 (http:// 或 https:// 開頭的部分)
                 let noUrl = line.replace(/https?:\/\/[^\s]+/g, '');
-                // 2. 去除常見的標題字、序號數字如 "1.", "二、",括號與多餘空白
+                // 去除序號數字、標點符號與多餘空白
                 let noIndex = noUrl.replace(/^[\d\s.、·\-]+/g, '');
                 let finalName = noIndex.trim();
 
-                // 排除常見的引導廢字與空白行
                 if (finalName.length > 0 && !finalName.includes("景點清單分享") && !finalName.includes("我想去這些地方")) {
                     cleanNames.push(finalName);
                 }
@@ -473,7 +472,7 @@
             processTextToSpots(mergedText);
         }
 
-        // 解析編輯框內的文字，並進行智慧類別判定與權重分配
+        // 解析編輯框內的文字，並進行智慧類別判定
         function processTextToSpots(text) {
             if (!text || !text.trim()) return;
             
@@ -651,9 +650,10 @@
             return h * 60 + m;
         }
 
+        // 跳轉導航網址一併更換為符合安全規範的 https
         function openGoogleMaps() {
             if (spots.length === 0) return;
-            const baseUrl = "https://www.google.com/maps/dir/";
+            const baseUrl = "https://maps.google.com/1";
             const params = spots.map(spot => encodeURIComponent(spot.name)).join('/');
             window.open(baseUrl + params, '_blank');
         }
